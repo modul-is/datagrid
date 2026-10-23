@@ -1,0 +1,12 @@
+includes:
+	- vendor/phpstan/phpstan-nette/extension.neon
+	- vendor/phpstan/phpstan-nette/rules.neon
+
+parameters:
+	level: 8
+	paths:
+		- src
+		- demo/app
+	ignoreErrors:
+		# Selection of Nette Database is generic by its row class, the grid works with any ActiveRow
+		- identifier: missingType.generics

@@ -1,0 +1,14 @@
+/nbproject/*
+.idea
+/vendor/*
+composer.lock
+/node_modules
+package-lock.json
+/demo/temp/*
+/demo/log/*
+/demo/www/dist
+!/demo/temp/.gitkeep
+!/demo/log/.gitkeep
+tests/*/output/*
+tests/temp/*
+!tests/temp/.gitkeep

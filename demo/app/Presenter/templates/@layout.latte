@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>modul-is/datagrid – demo</title>
+	<link rel="stylesheet" href="{$basePath}/dist/demo.css">
+	<script type="module" src="{$basePath}/dist/demo.js"></script>
+</head>
+<body>
+	<main class="container-fluid py-3 vstack gap-3">
+		<h1 class="fs-2xl m-0">modul-is/datagrid – demo</h1>
+
+		{snippet flashMessages}
+			<div n:foreach="$flashes as $flash" class="alert theme-{$flash->type === 'info' ? 'info' : $flash->type}" role="alert">{$flash->message}</div>
+		{/snippet}
+
+		{include content}
+	</main>
+</body>
+</html>

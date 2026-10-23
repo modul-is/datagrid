@@ -1,0 +1,77 @@
+@layer components {
+	.datagrid-table > thead > tr > th {
+		white-space: nowrap;
+		vertical-align: bottom;
+	}
+
+	/* sortable header - arrow of the current direction, both arrows dimmed when not sorted */
+	.datagrid-sort {
+		display: inline-flex;
+		gap: .25rem;
+		align-items: center;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.datagrid-sort::after {
+		font-size: .75em;
+		content: "\2195";
+		opacity: .35;
+	}
+
+	.datagrid-sort.is-sorted::after {
+		content: "\2191";
+		opacity: 1;
+	}
+
+	.datagrid-sort.is-sorted.is-desc::after {
+		content: "\2193";
+	}
+
+	.datagrid-filters > th {
+		min-width: 6rem;
+		font-weight: var(--bs-font-weight-normal);
+		vertical-align: top;
+	}
+
+	.datagrid-range {
+		min-width: 9rem;
+	}
+
+	.datagrid-range > * {
+		min-width: 0;
+	}
+
+	.datagrid-range > [type="date"] {
+		min-width: 8.5rem;
+	}
+
+	.datagrid-check {
+		width: 1%;
+	}
+
+	.datagrid-actions {
+		width: 1%;
+	}
+
+	.datagrid-detail > td {
+		background-color: var(--bs-bg-1);
+	}
+
+	.datagrid-editable {
+		cursor: pointer;
+	}
+
+	.datagrid-editable:hover {
+		outline: 1px dashed var(--bs-border-color);
+		outline-offset: -3px;
+	}
+
+	.datagrid-saving {
+		opacity: .5;
+	}
+
+	.datagrid-footer .form-control {
+		width: auto;
+	}
+}

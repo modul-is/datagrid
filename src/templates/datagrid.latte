@@ -1,0 +1,268 @@
+{*
+ * Datagrid for Bootstrap 6 - the client side is in assets/js (naja).
+ *
+ * The filter form and the form of group actions are empty <form> elements, their controls (filters in the header,
+ * checkboxes in the rows) belong to them by the form attribute. Blocks can be overridden in an own template
+ * (Datagrid::setTemplateFile(), {extends $originalTemplate}): toolbar, outerFilters, header, filters,
+ * row, cell, actions, empty, footer, pagination - and "col-{key}" for the cell of one column.
+ *}
+{varType ModulIS\Datagrid\Datagrid $grid}
+{varType array<string, ModulIS\Datagrid\Column\Column> $columns}
+{varType array<string, Nette\Database\Table\ActiveRow> $rows}
+{varType ?Nette\Utils\Paginator $paginator}
+{varType ?ModulIS\Datagrid\Detail $detail}
+
+<div
+	class="datagrid vstack gap-2"
+	id="{$grid->getUniqueId()}"
+	data-datagrid
+	data-datagrid-texts={[confirm => $texts['confirm'], ok => $texts['confirmOk'], cancel => $texts['confirmCancel']]}
+>
+	{snippet grid}
+		{form filterForm}{/form}
+		<form n:if="$groupActions" id="{$groupFormId}" method="post" action="{link groupAction!}" class="ajax" data-datagrid-group></form>
+
+		{block toolbar}
+			<div n:if="$groupActions || $toolbarButtons || $exports" class="d-flex flex-wrap align-items-center gap-2 datagrid-toolbar">
+				{if $groupActions}
+					{foreach $groupActions as $groupAction}
+						{$groupAction->render($groupFormId)}
+					{/foreach}
+					<span class="fs-sm fg-3">{$texts['selected']}: <span data-datagrid-selected>0</span></span>
+				{/if}
+
+				<div class="d-flex flex-wrap gap-2 ms-auto">
+					{foreach $toolbarButtons as $button}
+						{$button->render()}
+					{/foreach}
+					{foreach $exports as $export}
+						{$export->render()}
+					{/foreach}
+				</div>
+			</div>
+		{/block}
+
+		{block outerFilters}
+			<div n:if="$outerFilters" class="row g-2 align-items-end datagrid-outer-filters">
+				<div n:foreach="$outerFilters as $key => $filter" class="sm:col-6 lg:col-3">
+					<label class="form-label fs-sm mb-1">{$filter->getLabel()}</label>
+					{include filterControl, key: $key}
+				</div>
+				<div n:if="$hasFilter && !$columnFilters" class="col-auto">
+					<a n:href="resetFilter!" class="ajax btn-outline theme-danger btn-sm">{$texts['resetFilter']}</a>
+				</div>
+			</div>
+		{/block}
+
+		<div class="table-responsive datagrid-table-wrapper">
+			<table class="table table-hover align-middle mb-0 datagrid-table">
+				<thead>
+					{block header}
+						<tr>
+							<th n:if="$groupActions" class="datagrid-check">
+								<input type="checkbox" class="check" data-datagrid-check-all aria-label="{$texts['selectAll']}">
+							</th>
+							<th
+								n:foreach="$columns as $key => $column"
+								n:class="'text-' . $column->getAlign(), $column->getClass()"
+								style={$column->getWidth() ? 'width: ' . $column->getWidth()}
+							>
+								{if $column->isSortable()}
+									{var $direction = $sort[$key] ?? null}
+									<a
+										n:href="sort!, key: $key"
+										n:class="ajax, datagrid-sort, $direction ? 'is-sorted', $direction === 'DESC' ? 'is-desc'"
+										aria-sort="{$direction === 'ASC' ? 'ascending' : ($direction === 'DESC' ? 'descending' : 'none')}"
+									>{$column->getLabel()}</a>
+								{else}
+									{$column->getLabel()}
+								{/if}
+							</th>
+							<th n:if="$hasActions" class="text-end datagrid-actions">{$texts['actions']}</th>
+						</tr>
+					{/block}
+
+					{block filters}
+						<tr n:if="$columnFilters" class="datagrid-filters">
+							<th n:if="$groupActions"></th>
+							<th n:foreach="$columns as $key => $column">
+								{ifset $columnFilters[$key]}
+									{include filterControl, key: $key}
+								{/ifset}
+							</th>
+							<th n:if="$hasActions" class="text-end">
+								<a n:if="$hasFilter" n:href="resetFilter!" class="ajax btn-outline theme-danger btn-sm" title="{$texts['resetFilter']}" aria-label="{$texts['resetFilter']}">
+									{$grid->icon('remove')}
+								</a>
+							</th>
+						</tr>
+					{/block}
+				</thead>
+
+				{snippetArea items}
+					{foreach $rows as $id => $row}
+						<tbody n:snippet="item-{$id}">
+							{include row, id: $id, row: $row}
+
+							<tr n:if="$detail && in_array((string) $id, $openDetails, true)" class="datagrid-detail" data-datagrid-detail-row="{$id}">
+								<td colspan="{$colspan}">
+									{if $detail->getTemplate()}
+										{include $detail->getTemplate(), row: $row, (expand) $detail->getTemplateParameters()}
+									{else}
+										{$detail->render($row)}
+									{/if}
+								</td>
+							</tr>
+						</tbody>
+					{else}
+						{block empty}
+							<tbody>
+								<tr>
+									<td colspan="{$colspan}" class="text-center fg-3 py-4">{$texts['noData']}</td>
+								</tr>
+							</tbody>
+						{/block}
+					{/foreach}
+				{/snippetArea}
+			</table>
+		</div>
+
+		{block footer}
+			<div n:if="$paginator" class="d-flex flex-wrap align-items-center gap-3 datagrid-footer">
+				<div class="fs-sm fg-3">
+					{if $paginator->getItemCount()}
+						{=sprintf($texts['items'], $paginator->getOffset() + 1, $paginator->getOffset() + $paginator->getLength(), $paginator->getItemCount())}
+					{/if}
+				</div>
+
+				{include pagination}
+
+				<div class="d-flex align-items-center gap-2 ms-auto">
+					<label for="{$grid['filterForm']['perPage']->getHtmlId()}" class="fs-sm fg-3 text-nowrap">{$texts['perPage']}</label>
+					{$grid['filterForm']['perPage']->getCoreControl()|noescape}
+				</div>
+			</div>
+		{/block}
+	{/snippet}
+</div>
+
+
+{define row, string $id, Nette\Database\Table\ActiveRow $row}
+	{var $tr = $grid->createRowElement($row)->setAttribute('data-datagrid-row', $id)}
+	{$tr->startTag()|noescape}
+		<td n:if="$groupActions" class="datagrid-check">
+			<input n:if="$grid->isGroupSelectable($row)" type="checkbox" class="check" name="ids[]" value="{$id}" form="{$groupFormId}" data-datagrid-check aria-label="{$texts['selectRow']}">
+		</td>
+
+		{foreach $columns as $key => $column}
+			{include cell, id: $id, row: $row, key: $key, column: $column}
+		{/foreach}
+
+		<td n:if="$hasActions" class="text-end text-nowrap datagrid-actions">
+			{block actions}
+				<div class="d-inline-flex gap-1">
+					{foreach $actions as $action}
+						{if $action->isVisible($row)}
+							{$action->render($row)}
+						{/if}
+					{/foreach}
+					{if $detail && $detail->isVisible($row)}
+						{$detail->renderButton($row, $id)}
+					{/if}
+				</div>
+			{/block}
+		</td>
+	{$tr->endTag()|noescape}
+{/define}
+
+
+{define cell, string $id, Nette\Database\Table\ActiveRow $row, string $key, ModulIS\Datagrid\Column\Column $column}
+	{var $editable = $column->getEditable()}
+	{var $editing = $editable && $editable->isEditable($row)}
+	<td
+		n:class="'text-' . $column->getAlign(), $column->getClass(), $editing ? datagrid-editable"
+		n:attr="$column->getAttributes()"
+		data-datagrid-edit={$editing ? $grid->link('edit!', [id => $id, key => $key])}
+		data-datagrid-edit-type={$editing ? $editable->getType()}
+		data-datagrid-edit-value={$editing ? $editable->getInputValue($row, $column)}
+		data-datagrid-edit-items={$editing && $editable->getItems() !== null ? $editable->getItems()}
+	>
+		{ifset block "col-$key"}
+			{include block "col-$key", row: $row, column: $column}
+		{elseif $column->getTemplate()}
+			{include $column->getTemplate(), row: $row, column: $column, (expand) $column->getTemplateParameters()}
+		{elseif $column instanceof ModulIS\Datagrid\Column\StatusColumn}
+			{include status, id: $id, row: $row, column: $column}
+		{else}
+			{$column->render($row)}
+		{/ifset}
+	</td>
+{/define}
+
+
+{define status, string $id, Nette\Database\Table\ActiveRow $row, ModulIS\Datagrid\Column\StatusColumn $column}
+	{var $current = $column->getCurrentOption($row)}
+	{var $text = $current === null ? $column->getValue($row) : $column->getOptions()[$current]}
+
+	{if $column->isChangeable($row)}
+		<div class="d-inline-block">
+			<button type="button" class="btn-solid theme-{$column->getColor($current)} btn-sm" data-bs-toggle="menu" aria-expanded="false">
+				{$text}
+			</button>
+			<div class="menu">
+				{foreach $column->getOptions() as $option => $optionText}
+					{continueIf $option === $current}
+					<a
+						n:href="status!, id: $id, key: $column->getKey(), value: $option"
+						class="ajax menu-item"
+						data-datagrid-confirm={$column->getConfirm($option)}
+					>{$optionText}</a>
+				{/foreach}
+			</div>
+		</div>
+	{else}
+		<span class="badge theme-{$column->getColor($current)}">{$text}</span>
+	{/if}
+{/define}
+
+
+{define filterControl, string $key}
+	{var $control = $grid['filterForm']['filter'][$key]}
+	{if $control instanceof Nette\Forms\Container}
+		<div class="hstack gap-1 datagrid-range">
+			{foreach $control->getControls() as $part}
+				{$part->getCoreControl()|noescape}
+			{/foreach}
+		</div>
+	{else}
+		{$control->getCoreControl()|noescape}
+	{/if}
+{/define}
+
+
+{define pagination}
+	{varType Nette\Utils\Paginator $paginator}
+	<nav n:if="$paginator->getPageCount() > 1">
+		<ul class="pagination pagination-sm mb-0">
+			<li n:class="page-item, $paginator->isFirst() ? disabled">
+				<a n:href="page!, page: $paginator->getPage() - 1" class="ajax page-link" aria-label="{$texts['previous']}">&lsaquo;</a>
+			</li>
+
+			{var $previous = null}
+			{foreach range(1, $paginator->getPageCount()) as $page}
+				{* first, last and two pages around the current one *}
+				{continueIf $page !== 1 && $page !== $paginator->getPageCount() && abs($page - $paginator->getPage()) > 2}
+
+				<li n:if="$previous !== null && $page - $previous > 1" class="page-item disabled"><span class="page-link">&hellip;</span></li>
+				<li n:class="page-item, $page === $paginator->getPage() ? active">
+					<a n:href="page!, page: $page" class="ajax page-link" aria-current={$page === $paginator->getPage() ? page}>{$page}</a>
+				</li>
+				{var $previous = $page}
+			{/foreach}
+
+			<li n:class="page-item, $paginator->isLast() ? disabled">
+				<a n:href="page!, page: $paginator->getPage() + 1" class="ajax page-link" aria-label="{$texts['next']}">&rsaquo;</a>
+			</li>
+		</ul>
+	</nav>
+{/define}

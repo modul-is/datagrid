@@ -1,0 +1,25 @@
+extensions:
+	modulisForm: ModulIS\Form\DI\FormExtension
+	modulisDatagrid: ModulIS\Datagrid\DI\DatagridExtension
+
+application:
+	mapping: ModulIS\Datagrid\Demo\*Module\Presenter\*Presenter
+
+latte:
+	strictTypes: true
+
+database:
+	dsn: 'sqlite:%tempDir%/demo.sqlite'
+	options:
+		lazy: true
+
+modulisDatagrid:
+	align: center
+	perPageList: [10, 20, 50]
+
+services:
+	- ModulIS\Datagrid\Demo\Model\DemoDatabase
+	router:
+		create: Nette\Application\Routers\RouteList
+		setup:
+			- addRoute('<presenter>/<action>', 'Demo:default')
