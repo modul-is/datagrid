@@ -58,7 +58,7 @@ class SelectFilter extends Filter
 		$items = $this->items;
 		unset($items['']);
 
-		$control = $container->addSelect($this->key, $this->label, $items);
+		$control = $container->addSelect($this->getControlName(), $this->label, $items);
 		\assert($control instanceof \ModulIS\Form\Control\SelectBox);
 		$control->setPrompt($this->items[''] ?? $this->prompt ?? $grid->getText('all'))
 			->setHtmlAttribute('data-datagrid-autosubmit', 'change');

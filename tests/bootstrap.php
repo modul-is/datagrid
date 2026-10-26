@@ -10,12 +10,13 @@ date_default_timezone_set('Europe/Prague');
 
 
 /**
- * Explorer over an SQLite database in memory - insurance (3 rows) and person (6 rows)
+ * Explorer over an SQLite database in memory - company (2 rows), insurance (3 rows) and person (6 rows)
  */
 function createExplorer(): Nette\Database\Explorer
 {
 	$connection = new Nette\Database\Connection('sqlite::memory:');
-	$connection->query('CREATE TABLE insurance (id INTEGER PRIMARY KEY, name TEXT NOT NULL)');
+	$connection->query('CREATE TABLE company (id INTEGER PRIMARY KEY, name TEXT NOT NULL)');
+	$connection->query('CREATE TABLE insurance (id INTEGER PRIMARY KEY, name TEXT NOT NULL, company_id INTEGER REFERENCES company(id))');
 	$connection->query('
 		CREATE TABLE person (
 			id INTEGER PRIMARY KEY,
@@ -29,10 +30,15 @@ function createExplorer(): Nette\Database\Explorer
 		)
 	');
 
+	$connection->query('INSERT INTO company', [
+		['id' => 1, 'name' => 'VIG'],
+		['id' => 2, 'name' => 'Allianz SE']
+	]);
+
 	$connection->query('INSERT INTO insurance', [
-		['id' => 1, 'name' => 'Kooperativa'],
-		['id' => 2, 'name' => 'Allianz'],
-		['id' => 3, 'name' => 'Generali']
+		['id' => 1, 'name' => 'Kooperativa', 'company_id' => 1],
+		['id' => 2, 'name' => 'Allianz', 'company_id' => 2],
+		['id' => 3, 'name' => 'Generali', 'company_id' => null]
 	]);
 
 	$connection->query('INSERT INTO person', [

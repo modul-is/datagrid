@@ -22,9 +22,13 @@ protected function createComponentGrid(): Datagrid
 		->setSortable()
 		->setFilterText();
 
-	$grid->addText('insurance', 'Pojišťovna', 'insurance.name')   // column of the referenced row
-		->setSortable('insurance.name')
+	$grid->addText('insurance.name', 'Pojišťovna')                 // column of the referenced row
+		->setSortable()
 		->setFilterSelect($insurancePairs, 'insurance_id');
+
+	$grid->addText('insurance.company.name', 'Skupina')           // over three tables - sorted and filtered by the same path
+		->setSortable()
+		->setFilterText();
 
 	$grid->addDateTime('created', 'Vytvořeno')
 		->setFormat('j. n. Y H:i')
@@ -97,7 +101,9 @@ Icons are taken from modul-is/form (`modulisForm: icons: fontawesome`), the grid
 | `addStatus($key, $label, $options, ?$column)` | button with a menu of the options, `setColors()`, `setConfirm()`, `onChange[]` |
 
 `$column` is the path of the value in the row - default the key, `table.column` for a referenced row (chained
-`a.b.column`), `:table.column` for the first related row. Settings of all columns:
+`a.b.column`), `:table.column` for the first related row. The key itself can be the path, `$column` is then needed
+only when the key differs - sorting and filtering of the column use the path too (`addText('insurance.company.name', 'Skupina')->setSortable()->setFilterText()`).
+Own cell block of such a column is `{define col-insurance.company.name}`. Settings of all columns:
 
 - `setSortable(true|string|Closure)` - by the column, by another database column / expression, or by own sorting `fn(Selection $selection, string $direction)`
 - `setRenderer(fn(ActiveRow $row): string|Html|null)`, `setTemplate($file, $parameters)` (gets `$row`, `$column`), `setReplacement($list)`

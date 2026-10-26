@@ -15,7 +15,7 @@ class RangeFilter extends Filter
 {
 	public function addControl(Container $container, Datagrid $grid): void
 	{
-		$range = $container->addContainer($this->key);
+		$range = $container->addContainer($this->getControlName());
 
 		$range->addText('from', $grid->getText('from'))
 			->setHtmlAttribute('placeholder', $grid->getText('from'))

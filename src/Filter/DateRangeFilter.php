@@ -15,7 +15,7 @@ class DateRangeFilter extends Filter
 {
 	public function addControl(Container $container, Datagrid $grid): void
 	{
-		$range = $container->addContainer($this->key);
+		$range = $container->addContainer($this->getControlName());
 		\assert($range instanceof \ModulIS\Form\Container);
 
 		$range->addDate('from', $grid->getText('from'))

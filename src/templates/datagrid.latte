@@ -227,7 +227,7 @@
 
 
 {define filterControl, string $key}
-	{var $control = $grid['filterForm']['filter'][$key]}
+	{var $control = $grid->getFilterControl($key)}
 	{if $control instanceof Nette\Forms\Container}
 		<div class="hstack gap-1 datagrid-range">
 			{foreach $control->getControls() as $part}

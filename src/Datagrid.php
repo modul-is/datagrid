@@ -497,6 +497,14 @@ class Datagrid extends Control
 			throw new \Nette\InvalidArgumentException("Filter '{$filter->getKey()}' already exists.");
 		}
 
+		foreach($this->filters as $existing)
+		{
+			if($existing->getControlName() === $filter->getControlName())
+			{
+				throw new \Nette\InvalidArgumentException("Filter '{$filter->getKey()}' has the same control name '{$filter->getControlName()}' as filter '{$existing->getKey()}'.");
+			}
+		}
+
 		return $this->filters[$filter->getKey()] = $filter;
 	}
 
@@ -507,6 +515,21 @@ class Datagrid extends Control
 	public function getFilters(): array
 	{
 		return $this->filters;
+	}
+
+
+	/**
+	 * Control of the filter in the filter form - for own rendering of the filters
+	 */
+	public function getFilterControl(string $key): \Nette\Forms\Controls\BaseControl|\Nette\Forms\Container
+	{
+		$filter = $this->filters[$key] ?? throw new \Nette\InvalidArgumentException("Filter '$key' does not exist.");
+
+		$container = $this->getComponent('filterForm')->getComponent('filter');
+		\assert($container instanceof \Nette\Forms\Container);
+
+		/** @var \Nette\Forms\Controls\BaseControl|\Nette\Forms\Container */
+		return $container->getComponent($filter->getControlName());
 	}
 
 
@@ -1098,7 +1121,7 @@ class Datagrid extends Control
 
 			foreach($this->getFilterValues() as $key => $value)
 			{
-				$values[$key] = $this->filters[$key]->getFormValue($value);
+				$values[$this->filters[$key]->getControlName()] = $this->filters[$key]->getFormValue($value);
 			}
 
 			$form->setDefaults(['filter' => $values, 'perPage' => $this->getPerPage()]);
@@ -1118,7 +1141,7 @@ class Datagrid extends Control
 
 		foreach($this->filters as $key => $item)
 		{
-			$value = $item->normalize($values['filter'][$key] ?? null);
+			$value = $item->normalize($values['filter'][$item->getControlName()] ?? null);
 
 			if($value !== null)
 			{

@@ -16,7 +16,7 @@ class DateFilter extends Filter
 	public function addControl(Container $container, Datagrid $grid): void
 	{
 		/** @var \ModulIS\Form\Container $container */
-		$container->addDate($this->key, $this->label)
+		$container->addDate($this->getControlName(), $this->label)
 			->setHtmlAttribute('data-datagrid-autosubmit', 'change');
 	}
 

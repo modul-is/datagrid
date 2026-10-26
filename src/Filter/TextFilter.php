@@ -42,7 +42,7 @@ class TextFilter extends Filter
 
 	public function addControl(Container $container, Datagrid $grid): void
 	{
-		$container->addText($this->key, $this->label)
+		$container->addText($this->getControlName(), $this->label)
 			->setHtmlAttribute('placeholder', $this->placeholder ?? $grid->getText('search'))
 			->setHtmlAttribute('data-datagrid-autosubmit', 'input');
 	}

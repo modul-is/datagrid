@@ -41,6 +41,16 @@ abstract class Filter
 	}
 
 
+	/**
+	 * Name of the control in the filter form - the key may be a path over tables (insurance.company.name, :car.plate),
+	 * names of form controls allow only letters, digits and underscores
+	 */
+	public function getControlName(): string
+	{
+		return str_replace(['.', ':'], ['__', '_'], $this->key);
+	}
+
+
 	public function getLabel(): string
 	{
 		return $this->label;

@@ -73,10 +73,17 @@ class DemoPresenter extends \Nette\Application\UI\Presenter
 			->setSortable()
 			->setFilterMultiSelect(DemoDatabase::Roles);
 
-		$grid->addText('insurance', 'Pojišťovna', 'insurance.name')
-			->setSortable('insurance.name')
+		$grid->addText('insurance.name', 'Pojišťovna')
+			->setSortable()
 			->setFilterSelect($insurances, 'insurance_id')
 				->setSearch();
+
+		/**
+		 * Column over three tables (person -> insurance -> company) - the key is the path, sorting and filtering use it too
+		 */
+		$grid->addText('insurance.company.name', 'Skupina')
+			->setSortable()
+			->setFilterText();
 
 		$status = $grid->addStatus('status', 'Stav', DemoDatabase::Statuses)
 			->setColors(['A' => 'success', 'B' => 'danger', 'N' => 'info'])

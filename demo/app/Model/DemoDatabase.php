@@ -19,7 +19,12 @@ class DemoDatabase
 
 	private const array LastNames = ['Novák', 'Svoboda', 'Dvořák', 'Černý', 'Procházka', 'Kučera', 'Veselý', 'Horák', 'Němec', 'Marek'];
 
-	private const array Insurances = ['Kooperativa', 'Allianz', 'Generali', 'ČPP', 'Direct'];
+	/**
+	 * Insurance company => index of its group in Companies (null without group)
+	 */
+	private const array Insurances = ['Kooperativa' => 0, 'Allianz' => 1, 'Generali' => 2, 'ČPP' => 0, 'Direct' => null];
+
+	private const array Companies = ['VIG', 'Allianz SE', 'Generali Group'];
 
 
 	public function __construct
@@ -34,13 +39,20 @@ class DemoDatabase
 	{
 		$connection = $this->Explorer->getConnection();
 
-		if($connection->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'person'")->fetch())
+		if($connection->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'company'")->fetch())
 		{
 			return;
 		}
 
+		/**
+		 * Database of an older demo without the company table is created again
+		 */
+		$connection->query('DROP TABLE IF EXISTS person');
+		$connection->query('DROP TABLE IF EXISTS insurance');
+
 		$connection->query('PRAGMA foreign_keys = ON');
-		$connection->query('CREATE TABLE insurance (id INTEGER PRIMARY KEY, name TEXT NOT NULL)');
+		$connection->query('CREATE TABLE company (id INTEGER PRIMARY KEY, name TEXT NOT NULL)');
+		$connection->query('CREATE TABLE insurance (id INTEGER PRIMARY KEY, name TEXT NOT NULL, company_id INTEGER REFERENCES company(id))');
 		$connection->query('
 			CREATE TABLE person (
 				id INTEGER PRIMARY KEY,
@@ -58,9 +70,16 @@ class DemoDatabase
 			)
 		');
 
-		foreach(self::Insurances as $index => $name)
+		foreach(self::Companies as $index => $name)
 		{
-			$this->Explorer->table('insurance')->insert(['id' => $index + 1, 'name' => $name]);
+			$this->Explorer->table('company')->insert(['id' => $index + 1, 'name' => $name]);
+		}
+
+		foreach(array_keys(self::Insurances) as $index => $name)
+		{
+			$company = self::Insurances[$name];
+
+			$this->Explorer->table('insurance')->insert(['id' => $index + 1, 'name' => $name, 'company_id' => $company === null ? null : $company + 1]);
 		}
 
 		mt_srand(42);

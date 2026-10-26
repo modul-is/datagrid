@@ -31,7 +31,7 @@ class MultiSelectFilter extends Filter
 
 	public function addControl(Container $container, Datagrid $grid): void
 	{
-		$control = $container->addMultiSelect($this->key, $this->label, $this->items);
+		$control = $container->addMultiSelect($this->getControlName(), $this->label, $this->items);
 		\assert($control instanceof \ModulIS\Form\Control\MultiSelectBox);
 		$control->setSearch()
 			->setHtmlAttribute('placeholder', $this->placeholder ?? $grid->getText('choose'))
