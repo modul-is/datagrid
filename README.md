@@ -107,7 +107,7 @@ Own cell block of such a column is `{define col-insurance.company.name}`. Settin
 
 - `setSortable(true|string|Closure)` - by the column, by another database column / expression, or by own sorting `fn(Selection $selection, string $direction)`
 - `setRenderer(fn(ActiveRow $row): string|Html|null)`, `setTemplate($file, $parameters)` (gets `$row`, `$column`), `setReplacement($list)`
-- `setAlign('start'|'center'|'end')`, `setWidth(15)` (percent) or `setWidth('8rem')`, `setClass()`, `setAttributes()`
+- `setAlign('start'|'center'|'end')` - header, filter and cells of the column, default `center` (`Datagrid::setDefaultAlign()`), `setWidth(15)` (percent) or `setWidth('8rem')`, `setClass()`, `setAttributes()`
 - `setEditable(fn($id, string $value) => ..., 'text'|'number'|'date'|'textarea'|'select', ?$items)` - edited by a click, `->setValue(fn($row))`, `->setCondition(fn($row): bool)`
 - `setFilterText()`, `setFilterSelect()`, `setFilterMultiSelect()`, `setFilterDate()`, `setFilterDateRange()`, `setFilterRange()` - filter in the header of the column
 

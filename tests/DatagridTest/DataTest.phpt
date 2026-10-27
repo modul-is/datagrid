@@ -134,6 +134,24 @@ test('columns render values', function(): void
 });
 
 
+test('align - center by default, own align of the grid and of the column', function(): void
+{
+	$grid = new Datagrid(createExplorer()->table('person'));
+	$name = $grid->addText('lastname', 'Příjmení');
+	$salary = $grid->addNumber('salary', 'Plat')->setAlign('end');
+
+	Assert::same('center', $name->getAlign());
+	Assert::same('end', $salary->getAlign());
+
+	$grid->setDefaultAlign('start');
+
+	Assert::same('start', $name->getAlign());
+	Assert::same('end', $salary->getAlign());
+
+	Assert::exception(fn() => $name->setAlign('left'), Nette\InvalidArgumentException::class);
+});
+
+
 test('status - current option compared as strings', function(): void
 {
 	$explorer = createExplorer();

@@ -85,7 +85,7 @@
 					{block filters}
 						<tr n:if="$columnFilters" class="datagrid-filters">
 							<th n:if="$groupActions"></th>
-							<th n:foreach="$columns as $key => $column">
+							<th n:foreach="$columns as $key => $column" class="text-{$column->getAlign()}">
 								{ifset $columnFilters[$key]}
 									{include filterControl, key: $key}
 								{/ifset}

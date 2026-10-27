@@ -58,7 +58,7 @@ class Datagrid extends Control
 
 	/** @var array<string, mixed> */
 	private static array $defaults = [
-		'align' => Column::AlignStart,
+		'align' => Column::AlignCenter,
 		'perPageList' => [10, 25, 50, 100],
 		'rememberState' => false,
 		'texts' => [
