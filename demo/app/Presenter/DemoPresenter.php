@@ -182,4 +182,36 @@ class DemoPresenter extends \Nette\Application\UI\Presenter
 
 		return $grid;
 	}
+
+
+	protected function createComponentOuterFilterGrid(): Datagrid
+	{
+		$grid = new Datagrid($this->Explorer->table('person'));
+		$grid->setDefaultSort(['lastname' => 'ASC']);
+		$grid->setPerPageList([5, 10, 25]);
+		$grid->setOuterFilters();
+		$grid->setOuterFilterColumns(3);
+		$grid->setCollapsibleOuterFilters();
+
+		$grid->addText('lastname', 'Příjmení')
+			->setSortable()
+			->setFilterText(['lastname', 'firstname', 'email']);
+
+		$grid->addDial('role', 'Role', DemoDatabase::Roles)
+			->setFilterMultiSelect(DemoDatabase::Roles);
+
+		$grid->addText('insurance', 'Pojišťovna', 'insurance.name')
+			->setFilterSelect($this->Explorer->table('insurance')->fetchPairs('id', 'name'), 'insurance_id');
+
+		$grid->addNumber('salary', 'Plat')
+			->setFormat(0)
+			->setAlign('end')
+			->setFilterRange();
+
+		$grid->addDateTime('created_at', 'Vytvořeno')
+			->setFormat('j. n. Y')
+			->setFilterDateRange();
+
+		return $grid;
+	}
 }

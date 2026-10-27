@@ -72,6 +72,7 @@ class Datagrid extends Control
 			'noData' => 'Žádné položky',
 			'items' => 'Položky %d–%d z %d',
 			'resetFilter' => 'Zrušit filtr',
+			'showFilter' => 'Filtr',
 			'perPage' => 'Položek na stránku',
 			'actions' => 'Akce',
 			'selectAll' => 'Vybrat vše',
@@ -124,6 +125,10 @@ class Datagrid extends Control
 	private string $defaultAlign;
 
 	private bool $outerFilters = false;
+
+	private int $outerFilterColumns = 4;
+
+	private bool $collapsibleOuterFilters = false;
 
 	/** @var array<string, string> */
 	private array $texts;
@@ -296,6 +301,33 @@ class Datagrid extends Control
 	public function setOuterFilters(bool $outerFilters = true): static
 	{
 		$this->outerFilters = $outerFilters;
+
+		return $this;
+	}
+
+
+	/**
+	 * Number of filters in one row above the table (on medium and larger screens)
+	 */
+	public function setOuterFilterColumns(int $columns): static
+	{
+		if(!in_array($columns, [1, 2, 3, 4, 6, 12], true))
+		{
+			throw new \Nette\InvalidArgumentException("Count of columns of outer filters must be 1, 2, 3, 4, 6 or 12, $columns given.");
+		}
+
+		$this->outerFilterColumns = $columns;
+
+		return $this;
+	}
+
+
+	/**
+	 * Filters above the table hidden under a button - shown while a filter is active
+	 */
+	public function setCollapsibleOuterFilters(bool $collapsible = true): static
+	{
+		$this->collapsibleOuterFilters = $collapsible;
 
 		return $this;
 	}
@@ -1231,6 +1263,8 @@ class Datagrid extends Control
 			'openDetails' => $this->openDetails,
 			'columnFilters' => $columnFilters,
 			'outerFilters' => array_diff_key($this->filters, $columnFilters),
+			'outerFilterColumns' => $this->outerFilterColumns,
+			'collapsibleOuterFilters' => $this->collapsibleOuterFilters,
 			'filterValues' => $this->getFilterValues(),
 			'hasFilter' => (bool) array_filter($this->filter, fn(mixed $value): bool => $value !== ''),
 			'sort' => $this->getSort(),

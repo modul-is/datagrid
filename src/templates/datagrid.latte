@@ -43,12 +43,34 @@
 		{/block}
 
 		{block outerFilters}
-			<div n:if="$outerFilters" class="row g-2 align-items-end datagrid-outer-filters">
-				<div n:foreach="$outerFilters as $key => $filter" class="sm:col-6 lg:col-3">
+			{var $outerFiltersId = $grid->getUniqueId() . '-outer-filters'}
+			{var $columnSize = 12 / $outerFilterColumns}
+
+			<div n:if="$outerFilters && $collapsibleOuterFilters" class="d-flex justify-content-end gap-2">
+				<a n:if="$hasFilter && !$columnFilters" n:href="resetFilter!" class="ajax btn-outline theme-danger btn-sm">{$texts['resetFilter']}</a>
+				<button
+					type="button"
+					n:class="btn-outline, theme-primary, btn-sm, $hasFilter ? active"
+					aria-controls="{$outerFiltersId}"
+					aria-expanded="{$hasFilter ? 'true' : 'false'}"
+					data-datagrid-outer-toggle
+				>
+					{$grid->icon('filter')} {$texts['showFilter']}
+				</button>
+			</div>
+
+			<div
+				n:if="$outerFilters"
+				class="row g-2 align-items-end datagrid-outer-filters"
+				id="{$outerFiltersId}"
+				hidden={$collapsibleOuterFilters && !$hasFilter}
+				data-datagrid-outer-filters
+			>
+				<div n:foreach="$outerFilters as $key => $filter" class="sm:col-{max($columnSize, 6)} lg:col-{$columnSize}">
 					<label class="form-label fs-sm mb-1">{$filter->getLabel()}</label>
 					{include filterControl, key: $key}
 				</div>
-				<div n:if="$hasFilter && !$columnFilters" class="col-auto">
+				<div n:if="$hasFilter && !$columnFilters && !$collapsibleOuterFilters" class="col-auto">
 					<a n:href="resetFilter!" class="ajax btn-outline theme-danger btn-sm">{$texts['resetFilter']}</a>
 				</div>
 			</div>

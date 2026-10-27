@@ -181,3 +181,17 @@ test('state - per page only from the list', function(): void
 
 	Assert::same(20, $grid->getPerPage());
 });
+
+
+test('outer filters - count of columns divides the row', function(): void
+{
+	$grid = new Datagrid(createExplorer()->table('person'));
+
+	Assert::same($grid, $grid->setOuterFilterColumns(3));
+
+	Assert::exception(
+		fn() => $grid->setOuterFilterColumns(5),
+		Nette\InvalidArgumentException::class,
+		'Count of columns of outer filters must be 1, 2, 3, 4, 6 or 12, 5 given.'
+	);
+});

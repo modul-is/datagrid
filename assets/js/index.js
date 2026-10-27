@@ -1,6 +1,6 @@
 /**
  * Client side of modul-is/datagrid - filters submitted while typing, confirmation of actions, checkboxes
- * of group actions, detail of a row and editable cells.
+ * of group actions, detail of a row, editable cells and collapsible outer filters.
  *
  *     import { initDatagrid } from '@modul-is/datagrid';
  *     import '@modul-is/datagrid/css';
@@ -20,6 +20,11 @@ let confirmDialog = null;
  */
 let typing = null;
 
+/**
+ * Collapsible outer filters shown or hidden by the user - id => shown, survives the redraw of the grid
+ */
+const outerFilters = new Map();
+
 
 export function initDatagrid(najaInstance)
 {
@@ -27,6 +32,7 @@ export function initDatagrid(najaInstance)
 
 	document.addEventListener('click', onConfirmClick, true);
 	document.addEventListener('click', onDetailClick, true);
+	document.addEventListener('click', onOuterFiltersClick);
 	document.addEventListener('click', onEditClick);
 	document.addEventListener('input', onFilterInput);
 	document.addEventListener('change', onFilterChange);
@@ -143,6 +149,51 @@ function restoreTyping()
 	catch
 	{
 		// inputs without selection (number, date)
+	}
+}
+
+
+/************************************************************************************************************
+ * Collapsible outer filters - [data-datagrid-outer-toggle] shows / hides the filters above the table
+ ************************************************************************************************************/
+
+
+function onOuterFiltersClick(event)
+{
+	const button = event.target.closest?.('[data-datagrid-outer-toggle]');
+	const filters = button && document.getElementById(button.getAttribute('aria-controls'));
+
+	if (!filters)
+	{
+		return;
+	}
+
+	outerFilters.set(filters.id, filters.hidden);
+	showOuterFilters(button, filters, filters.hidden);
+}
+
+
+function showOuterFilters(button, filters, shown)
+{
+	filters.hidden = !shown;
+	button.classList.toggle('active', shown);
+	button.setAttribute('aria-expanded', String(shown));
+}
+
+
+/**
+ * Filters shown by the user stay shown after the redraw, hidden ones are shown again only by an active filter
+ */
+function restoreOuterFilters(grid)
+{
+	for (const button of grid.querySelectorAll('[data-datagrid-outer-toggle]'))
+	{
+		const filters = document.getElementById(button.getAttribute('aria-controls'));
+
+		if (filters && outerFilters.get(filters.id) === true)
+		{
+			showOuterFilters(button, filters, true);
+		}
 	}
 }
 
@@ -432,6 +483,7 @@ function onAfterUpdate(event)
 	if (grid)
 	{
 		refreshChecks(grid);
+		restoreOuterFilters(grid);
 	}
 
 	restoreTyping();

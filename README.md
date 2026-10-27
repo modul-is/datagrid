@@ -116,6 +116,12 @@ Own cell block of such a column is `{define col-insurance.company.name}`. Settin
 A filter with the key of a column is shown in the header of the column, other filters (`addFilterText()`,
 `addFilterSelect()`, ... of the grid) above the table - `setOuterFilters()` shows all of them above the table.
 
+```php
+$grid->setOuterFilters();             // all filters above the table
+$grid->setOuterFilterColumns(3);      // filters in one row: 1, 2, 3, 4 (default), 6 or 12
+$grid->setCollapsibleOuterFilters();  // hidden under the button "Filtr" - shown while a filter is active
+```
+
 | Filter | Condition |
 | --- | --- |
 | text | every word in one of the columns (`LIKE %word%`), `setExact()`, `setSplitWords(false)` |
@@ -183,7 +189,7 @@ $grid->setDetail(fn(ActiveRow $row) => Html::el('p')->setText($row->note))
 ## Client side
 
 `assets/js` - filters submitted while typing (focus and typed text survive the redraw), confirmation dialog of actions
-(`data-datagrid-confirm`), checkboxes of group actions, detail of a row and editable cells. All listeners are on the
+(`data-datagrid-confirm`), checkboxes of group actions, detail of a row, editable cells and collapsible outer filters. All listeners are on the
 document, grids in redrawn snippets need no initialization.
 
 ## Development
