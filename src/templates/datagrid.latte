@@ -4,7 +4,8 @@
  * The filter form and the form of group actions are empty <form> elements, their controls (filters in the header,
  * checkboxes in the rows) belong to them by the form attribute. Blocks can be overridden in an own template
  * (Datagrid::setTemplateFile(), {extends $originalTemplate}): toolbar, outerFilters, header, filters,
- * row, cell, actions, empty, footer, pagination - and "col-{key}" for the cell of one column.
+ * row, cell, actions, empty, footer, pagination, columnSettings - and "col-{key}" for the cell of one column.
+ * $columns are the visible columns in the order of the settings of the columns.
  *}
 {varType ModulIS\Datagrid\Datagrid $grid}
 {varType array<string, ModulIS\Datagrid\Column\Column> $columns}
@@ -23,7 +24,8 @@
 		<form n:if="$groupActions" id="{$groupFormId}" method="post" action="{link groupAction!}" class="ajax" data-datagrid-group></form>
 
 		{block toolbar}
-			<div n:if="$groupActions || $toolbarButtons || $exports" class="d-flex flex-wrap align-items-center gap-2 datagrid-toolbar">
+			{var $outerFilterToggle = $outerFilters && $collapsibleOuterFilters}
+			<div n:if="$groupActions || $toolbarButtons || $exports || $columnSettings || $outerFilterToggle" class="d-flex flex-wrap align-items-center gap-2 datagrid-toolbar">
 				{if $groupActions}
 					{foreach $groupActions as $groupAction}
 						{$groupAction->render($groupFormId)}
@@ -38,26 +40,32 @@
 					{foreach $exports as $export}
 						{$export->render()}
 					{/foreach}
+					<button n:if="$columnSettings" type="button" class="btn-outline theme-secondary btn-sm" data-datagrid-columns-open>
+						{$grid->icon('table-columns')} {$texts['columnSettings']}
+					</button>
+					{if $outerFilterToggle}
+						<a n:if="$hasFilter && !$columnFilters" n:href="resetFilter!" class="ajax btn-outline theme-danger btn-sm">{$texts['resetFilter']}</a>
+						<button
+							type="button"
+							n:class="btn-outline, theme-primary, btn-sm, $hasFilter ? active"
+							aria-controls="{$grid->getUniqueId()}-outer-filters"
+							aria-expanded="{$hasFilter ? 'true' : 'false'}"
+							data-datagrid-outer-toggle
+						>
+							{$grid->icon('filter')} {$texts['showFilter']}
+						</button>
+					{/if}
 				</div>
 			</div>
+
+			{if $columnSettings}
+				{include columnSettings}
+			{/if}
 		{/block}
 
 		{block outerFilters}
 			{var $outerFiltersId = $grid->getUniqueId() . '-outer-filters'}
 			{var $columnSize = 12 / $outerFilterColumns}
-
-			<div n:if="$outerFilters && $collapsibleOuterFilters" class="d-flex justify-content-end gap-2">
-				<a n:if="$hasFilter && !$columnFilters" n:href="resetFilter!" class="ajax btn-outline theme-danger btn-sm">{$texts['resetFilter']}</a>
-				<button
-					type="button"
-					n:class="btn-outline, theme-primary, btn-sm, $hasFilter ? active"
-					aria-controls="{$outerFiltersId}"
-					aria-expanded="{$hasFilter ? 'true' : 'false'}"
-					data-datagrid-outer-toggle
-				>
-					{$grid->icon('filter')} {$texts['showFilter']}
-				</button>
-			</div>
 
 			<div
 				n:if="$outerFilters"
@@ -245,6 +253,41 @@
 	{else}
 		<span class="badge theme-{$column->getColor($current)}">{$text}</span>
 	{/if}
+{/define}
+
+
+{define columnSettings}
+	{var $dialogId = $grid->getUniqueId() . '-columns'}
+	<dialog class="dialog datagrid-columns" id="{$dialogId}" aria-labelledby="{$dialogId}-title" data-datagrid-columns>
+		<form method="post" action="{link columnSettings!}" class="ajax" data-datagrid-columns-form>
+			<div class="dialog-header">
+				<h2 class="dialog-title fs-lg" id="{$dialogId}-title">{$texts['columnSettingsTitle']}</h2>
+				<button type="button" class="btn-close" aria-label="{$texts['columnSettingsCancel']}" data-datagrid-columns-close></button>
+			</div>
+			<div class="dialog-body vstack gap-2">
+				<p class="fs-sm fg-3 mb-0">{$texts['columnSettingsHint']}</p>
+				<ul class="list-unstyled vstack gap-1 mb-0 datagrid-columns-list">
+					<li n:foreach="$orderedColumns as $key => $column" class="d-flex align-items-center gap-2 datagrid-columns-item" draggable="true" data-datagrid-column>
+						<span class="fg-3 datagrid-columns-handle" aria-hidden="true">{$grid->icon('grip-vertical')}</span>
+						<input type="hidden" name="columns[]" value="{$key}">
+						<label class="d-flex align-items-center gap-2 flex-grow-1 mb-0">
+							<input type="checkbox" class="check" name="visible[]" value="{$key}" checked={$grid->isColumnVisible($key)}>
+							<span>{$column->getLabel()}</span>
+						</label>
+						<button type="button" class="btn-text theme-secondary btn-sm btn-icon" data-datagrid-column-move="up" title="{$texts['moveUp']}" aria-label="{$texts['moveUp']}">{$grid->icon('arrow-up')}</button>
+						<button type="button" class="btn-text theme-secondary btn-sm btn-icon" data-datagrid-column-move="down" title="{$texts['moveDown']}" aria-label="{$texts['moveDown']}">{$grid->icon('arrow-down')}</button>
+					</li>
+				</ul>
+			</div>
+			<div class="dialog-footer d-flex justify-content-between gap-2">
+				<a n:href="resetColumnSettings!" class="ajax btn-text theme-danger" data-datagrid-columns-close>{$texts['columnSettingsReset']}</a>
+				<div class="d-flex gap-2">
+					<button type="button" class="btn-outline theme-secondary" data-datagrid-columns-close>{$texts['columnSettingsCancel']}</button>
+					<button type="submit" class="btn-solid theme-primary">{$texts['columnSettingsSave']}</button>
+				</div>
+			</div>
+		</form>
+	</dialog>
 {/define}
 
 

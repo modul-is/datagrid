@@ -1,6 +1,6 @@
 /**
  * Client side of modul-is/datagrid - filters submitted while typing, confirmation of actions, checkboxes
- * of group actions, detail of a row, editable cells and collapsible outer filters.
+ * of group actions, detail of a row, editable cells, collapsible outer filters and settings of the columns.
  *
  *     import { initDatagrid } from '@modul-is/datagrid';
  *     import '@modul-is/datagrid/css';
@@ -38,6 +38,11 @@ export function initDatagrid(najaInstance)
 	document.addEventListener('change', onFilterChange);
 	document.addEventListener('keydown', onFilterKeydown);
 	document.addEventListener('change', onCheckChange);
+	document.addEventListener('click', onColumnsClick);
+	document.addEventListener('submit', onColumnsSubmit, true);
+	document.addEventListener('dragstart', onColumnDragStart);
+	document.addEventListener('dragover', onColumnDragOver);
+	document.addEventListener('dragend', onColumnDragEnd);
 
 	naja.snippetHandler.addEventListener('afterUpdate', onAfterUpdate);
 }
@@ -468,6 +473,161 @@ function createEditor(type, value, items)
 	editor.value = value;
 
 	return editor;
+}
+
+
+/************************************************************************************************************
+ * Settings of the columns - dialog [data-datagrid-columns] opened natively (no state of the Bootstrap dialog
+ * is left behind when the grid is redrawn), order changed by arrows or drag and drop
+ ************************************************************************************************************/
+
+
+let draggedColumn = null;
+
+
+function onColumnsClick(event)
+{
+	const open = event.target.closest?.('[data-datagrid-columns-open]');
+
+	if (open)
+	{
+		const dialog = open.closest('[data-datagrid]')?.querySelector('[data-datagrid-columns]');
+
+		if (dialog && !dialog.open)
+		{
+			openColumnsDialog(dialog);
+		}
+
+		return;
+	}
+
+	const dialog = event.target.closest?.('[data-datagrid-columns]');
+
+	if (!dialog)
+	{
+		return;
+	}
+
+	// click on the backdrop or on a closing button
+	if (event.target === dialog || event.target.closest('[data-datagrid-columns-close]'))
+	{
+		dialog.close();
+
+		return;
+	}
+
+	const move = event.target.closest('[data-datagrid-column-move]');
+	const item = move?.closest('[data-datagrid-column]');
+
+	if (!item)
+	{
+		return;
+	}
+
+	if (move.dataset.datagridColumnMove === 'up' && item.previousElementSibling)
+	{
+		item.previousElementSibling.before(item);
+	}
+	else if (move.dataset.datagridColumnMove === 'down' && item.nextElementSibling)
+	{
+		item.nextElementSibling.after(item);
+	}
+
+	move.focus();
+}
+
+
+/**
+ * Closed without saving - the list returns to the rendered settings (checkboxes by their checked attribute)
+ */
+function openColumnsDialog(dialog)
+{
+	const list = dialog.querySelector('ul');
+	const original = list.innerHTML;
+
+	dialog.dataset.datagridColumnsSaved = '';
+	dialog.addEventListener('close', () =>
+	{
+		if (!dialog.dataset.datagridColumnsSaved)
+		{
+			list.innerHTML = original;
+		}
+	}, { once: true });
+
+	dialog.showModal();
+}
+
+
+/**
+ * At least one column stays visible - the dialog is closed before the grid is redrawn by the response
+ */
+function onColumnsSubmit(event)
+{
+	const form = event.target.closest?.('[data-datagrid-columns-form]');
+
+	if (!form)
+	{
+		return;
+	}
+
+	if (!form.querySelector('input[name="visible[]"]:checked'))
+	{
+		event.preventDefault();
+		event.stopImmediatePropagation();
+
+		return;
+	}
+
+	const dialog = form.closest('dialog');
+
+	if (dialog)
+	{
+		dialog.dataset.datagridColumnsSaved = '1';
+		dialog.close();
+	}
+}
+
+
+function onColumnDragStart(event)
+{
+	draggedColumn = event.target.closest?.('[data-datagrid-column]') ?? null;
+
+	if (draggedColumn)
+	{
+		event.dataTransfer.effectAllowed = 'move';
+		draggedColumn.classList.add('is-dragging');
+	}
+}
+
+
+function onColumnDragOver(event)
+{
+	const target = event.target.closest?.('[data-datagrid-column]');
+
+	if (!draggedColumn || !target || target === draggedColumn || target.parentElement !== draggedColumn.parentElement)
+	{
+		return;
+	}
+
+	event.preventDefault();
+
+	const box = target.getBoundingClientRect();
+
+	if (event.clientY < box.top + box.height / 2)
+	{
+		target.before(draggedColumn);
+	}
+	else
+	{
+		target.after(draggedColumn);
+	}
+}
+
+
+function onColumnDragEnd()
+{
+	draggedColumn?.classList.remove('is-dragging');
+	draggedColumn = null;
 }
 
 

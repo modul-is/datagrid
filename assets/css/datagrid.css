@@ -74,4 +74,37 @@
 	.datagrid-footer .form-control {
 		width: auto;
 	}
+
+	/* closed .dialog keeps display: flex (visibility only, because of the transitions) - it would take space in the grid */
+	.datagrid-columns:not([open]) {
+		display: none;
+	}
+
+	/* header and footer stay, the list scrolls in a low window */
+	.datagrid-columns > form {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		max-height: 100%;
+	}
+
+	.datagrid-columns .dialog-body {
+		overflow-y: auto;
+	}
+
+	.datagrid-columns-item {
+		padding: .125rem .5rem;
+		font-size: var(--bs-font-size-sm);
+		background-color: var(--bs-bg-body);
+		border: var(--bs-border-width) solid var(--bs-border-color);
+		border-radius: var(--bs-border-radius);
+	}
+
+	.datagrid-columns-item.is-dragging {
+		opacity: .5;
+	}
+
+	.datagrid-columns-handle {
+		cursor: grab;
+	}
 }

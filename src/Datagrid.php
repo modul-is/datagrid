@@ -83,7 +83,15 @@ class Datagrid extends Control
 			'confirmOk' => 'Ano',
 			'confirmCancel' => 'Zrušit',
 			'previous' => 'Předchozí',
-			'next' => 'Další'
+			'next' => 'Další',
+			'columnSettings' => 'Sloupce',
+			'columnSettingsTitle' => 'Nastavení sloupců',
+			'columnSettingsHint' => 'Pořadí změníte přetažením nebo šipkami, zaškrtnuté sloupce se zobrazí.',
+			'columnSettingsSave' => 'Uložit',
+			'columnSettingsReset' => 'Výchozí nastavení',
+			'columnSettingsCancel' => 'Zrušit',
+			'moveUp' => 'Posunout výš',
+			'moveDown' => 'Posunout níž'
 		]
 	];
 
@@ -150,6 +158,15 @@ class Datagrid extends Control
 	private array $openDetails = [];
 
 	private ?int $itemCount = null;
+
+	/** @var (\Closure(array{order: list<string>, hidden: list<string>}|null): void)|null */
+	private ?\Closure $columnSettingsCallback = null;
+
+	/** @var list<string> keys of the columns in the order set by the user */
+	private array $columnOrder = [];
+
+	/** @var list<string> */
+	private array $hiddenColumns = [];
 
 
 	public function __construct
@@ -467,6 +484,82 @@ class Datagrid extends Control
 	}
 
 
+	/**
+	 * Button above the table opening the settings of the columns (order and visibility) - shown only when this is called.
+	 * The grid does not store the settings: $settings are the ones loaded from the storage of the application,
+	 * $onChange gets the new settings to store (null = back to the defaults). Order and hidden columns can be
+	 * applied without the button by applyColumnSettings().
+	 *
+	 * @param array{order?: list<string>, hidden?: list<string>}|null $settings
+	 * @param \Closure(array{order: list<string>, hidden: list<string>}|null): void $onChange
+	 */
+	public function setColumnSettings(?array $settings, \Closure $onChange): static
+	{
+		$this->columnSettingsCallback = $onChange;
+
+		return $this->applyColumnSettings($settings);
+	}
+
+
+	/**
+	 * Order and hidden columns - unknown keys are ignored (columns removed since the settings were stored),
+	 * columns missing in the order (added later) keep their place behind the ordered ones
+	 *
+	 * @param array{order?: list<string>, hidden?: list<string>}|null $settings
+	 */
+	public function applyColumnSettings(?array $settings): static
+	{
+		$this->columnOrder = array_values(array_filter((array) ($settings['order'] ?? []), is_string(...)));
+		$this->hiddenColumns = array_values(array_filter((array) ($settings['hidden'] ?? []), is_string(...)));
+
+		return $this;
+	}
+
+
+	public function hasColumnSettings(): bool
+	{
+		return $this->columnSettingsCallback !== null;
+	}
+
+
+	/**
+	 * All columns in the order of the settings, with their visibility - for the dialog of the settings
+	 *
+	 * @return array<string, Column>
+	 */
+	public function getOrderedColumns(): array
+	{
+		$ordered = [];
+
+		foreach($this->columnOrder as $key)
+		{
+			if(isset($this->columns[$key]))
+			{
+				$ordered[$key] = $this->columns[$key];
+			}
+		}
+
+		return $ordered + $this->columns;
+	}
+
+
+	public function isColumnVisible(string $key): bool
+	{
+		return isset($this->columns[$key]) && !in_array($key, $this->hiddenColumns, true);
+	}
+
+
+	/**
+	 * Columns rendered in the table - ordered, without the hidden ones
+	 *
+	 * @return array<string, Column>
+	 */
+	public function getVisibleColumns(): array
+	{
+		return array_filter($this->getOrderedColumns(), fn(Column $column): bool => $this->isColumnVisible($column->getKey()));
+	}
+
+
 	/********************************************************************************
 	 * Filters - a filter with the key of a column is shown in the header of the column, others above the table
 	 ********************************************************************************/
@@ -576,6 +669,14 @@ class Datagrid extends Control
 
 		foreach($this->filters as $key => $filter)
 		{
+			/**
+			 * Filter of a hidden column would limit the rows without the user seeing it
+			 */
+			if(isset($this->columns[$key]) && !$this->isColumnVisible($key))
+			{
+				continue;
+			}
+
 			$value = array_key_exists($key, $this->filter)
 				? $filter->normalize($this->filter[$key])
 				: $filter->normalize($this->defaultFilter[$key] ?? null);
@@ -752,7 +853,7 @@ class Datagrid extends Control
 	{
 		foreach($this->sort as $key => $direction)
 		{
-			if(isset($this->columns[$key]) && $this->columns[$key]->isSortable() && in_array($direction, ['ASC', 'DESC'], true))
+			if(isset($this->columns[$key]) && $this->columns[$key]->isSortable() && $this->isColumnVisible($key) && in_array($direction, ['ASC', 'DESC'], true))
 			{
 				return [$key => $direction];
 			}
@@ -1089,6 +1190,49 @@ class Datagrid extends Control
 	}
 
 
+	/**
+	 * Settings of the columns from the dialog - keys of the columns in the new order (columns[]) and the checked ones (visible[])
+	 */
+	public function handleColumnSettings(): void
+	{
+		if(!$this->columnSettingsCallback)
+		{
+			$this->getPresenter()->error('Settings of the columns are not enabled.');
+		}
+
+		$request = $this->getPresenter()->getRequest();
+		$order = array_values(array_unique(array_filter((array) $request->getPost('columns'), fn(mixed $key): bool => is_string($key) && isset($this->columns[$key]))));
+		$visible = array_filter((array) $request->getPost('visible'), fn(mixed $key): bool => is_string($key) && isset($this->columns[$key]));
+
+		if($visible)
+		{
+			$settings = [
+				'order' => $order,
+				'hidden' => array_values(array_diff(array_keys($this->columns), $visible))
+			];
+
+			($this->columnSettingsCallback)($settings);
+			$this->applyColumnSettings($settings);
+		}
+
+		$this->reload();
+	}
+
+
+	public function handleResetColumnSettings(): void
+	{
+		if(!$this->columnSettingsCallback)
+		{
+			$this->getPresenter()->error('Settings of the columns are not enabled.');
+		}
+
+		($this->columnSettingsCallback)(null);
+		$this->applyColumnSettings(null);
+
+		$this->reload();
+	}
+
+
 	public function handleGroupAction(): void
 	{
 		$request = $this->getPresenter()->getRequest();
@@ -1247,14 +1391,22 @@ class Datagrid extends Control
 			$rows[$this->getRowId($row)] = $row;
 		}
 
-		$columnFilters = $this->outerFilters ? [] : array_intersect_key($this->filters, $this->columns);
+		$columns = $this->getVisibleColumns();
+		$columnFilters = $this->outerFilters ? [] : array_intersect_key($this->filters, $columns);
 		$hasActions = $this->actions || $this->detail;
+
+		/**
+		 * Filters of hidden columns are not applied, so they are not offered above the table either
+		 */
+		$outerFilters = array_diff_key($this->filters, $columnFilters, array_diff_key($this->columns, $columns));
 
 		$parameters = [
 			'originalTemplate' => __DIR__ . '/templates/datagrid.latte',
 			'grid' => $this,
 			'rows' => $rows,
-			'columns' => $this->columns,
+			'columns' => $columns,
+			'orderedColumns' => $this->getOrderedColumns(),
+			'columnSettings' => $this->hasColumnSettings(),
 			'actions' => $this->actions,
 			'toolbarButtons' => $this->toolbarButtons,
 			'groupActions' => $this->groupActions,
@@ -1262,7 +1414,7 @@ class Datagrid extends Control
 			'detail' => $this->detail,
 			'openDetails' => $this->openDetails,
 			'columnFilters' => $columnFilters,
-			'outerFilters' => array_diff_key($this->filters, $columnFilters),
+			'outerFilters' => $outerFilters,
 			'outerFilterColumns' => $this->outerFilterColumns,
 			'collapsibleOuterFilters' => $this->collapsibleOuterFilters,
 			'filterValues' => $this->getFilterValues(),
@@ -1270,7 +1422,7 @@ class Datagrid extends Control
 			'sort' => $this->getSort(),
 			'paginator' => $paginator,
 			'hasActions' => $hasActions,
-			'colspan' => count($this->columns) + ($this->groupActions ? 1 : 0) + ($hasActions ? 1 : 0),
+			'colspan' => count($columns) + ($this->groupActions ? 1 : 0) + ($hasActions ? 1 : 0),
 			'groupFormId' => $this->getFormId('group'),
 			'texts' => $this->texts
 		];

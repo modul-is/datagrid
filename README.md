@@ -182,6 +182,24 @@ $grid->setDetail(fn(ActiveRow $row) => Html::el('p')->setText($row->note))
 	->setVisible(fn(ActiveRow $row): bool => $row->note !== null);
 ```
 
+### Settings of the columns
+
+The button "Sloupce" above the table opens a dialog where the user changes the order of the columns (drag and drop or arrows)
+and hides some of them. The button is shown only when `setColumnSettings()` is called. The grid does not store anything -
+the application passes the settings loaded from its storage and stores the new ones in the callback (`null` = back to the defaults):
+
+```php
+$grid->setColumnSettings(
+	$this->GridSettingRepository->get($userId, 'contractGrid'),                  // array{order: list<string>, hidden: list<string>}|null
+	fn(?array $settings) => $this->GridSettingRepository->save($userId, 'contractGrid', $settings)
+);
+
+$grid->applyColumnSettings($settings);      // order and hidden columns without the button
+```
+
+Unknown keys (columns removed since the settings were stored) are ignored, columns missing in the order (added later) are
+behind the ordered ones. A filter and sorting of a hidden column are not applied. Exports keep all columns.
+
 ### Redraw
 
 `$grid->reload()` redraws the grid (AJAX) or reloads the page, `$grid->redrawItem($id)` redraws one row.
@@ -189,7 +207,8 @@ $grid->setDetail(fn(ActiveRow $row) => Html::el('p')->setText($row->note))
 ## Client side
 
 `assets/js` - filters submitted while typing (focus and typed text survive the redraw), confirmation dialog of actions
-(`data-datagrid-confirm`), checkboxes of group actions, detail of a row, editable cells and collapsible outer filters. All listeners are on the
+(`data-datagrid-confirm`), checkboxes of group actions, detail of a row, editable cells, collapsible outer filters and the dialog
+of the settings of the columns. All listeners are on the
 document, grids in redrawn snippets need no initialization.
 
 ## Development
