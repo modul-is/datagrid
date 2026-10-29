@@ -296,13 +296,22 @@ class Column
 
 
 	/**
-	 * Text of the cell for the CSV export
+	 * Text of the cell for the CSV export - block elements and line breaks of an HTML value are separated by a space,
+	 * otherwise e.g. a name and an identifier in two <div>s would be glued together
 	 */
 	public function renderText(ActiveRow $row): string
 	{
 		$value = $this->render($row);
 
-		return $value instanceof HtmlStringable ? html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5) : (string) $value;
+		if(!$value instanceof HtmlStringable)
+		{
+			return (string) $value;
+		}
+
+		$html = (string) preg_replace('~<(br|/div|/p|/li|/tr|/td|/th|/h[1-6])\b[^>]*>~i', ' ', (string) $value);
+		$text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5);
+
+		return trim((string) preg_replace('~\s+~u', ' ', $text));
 	}
 
 

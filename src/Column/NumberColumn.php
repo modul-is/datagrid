@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace ModulIS\Datagrid\Column;
 
+use Nette\Database\Table\ActiveRow;
 use Nette\HtmlStringable;
 
 /**
@@ -25,6 +26,22 @@ class NumberColumn extends Column
 		$this->thousandsSeparator = $thousandsSeparator;
 
 		return $this;
+	}
+
+
+	/**
+	 * Number without the thousands separator in the CSV export - a spreadsheet reads it as a number, not as a text
+	 */
+	public function renderText(ActiveRow $row): string
+	{
+		$value = $this->getValue($row);
+
+		if($this->renderer || !is_numeric($value))
+		{
+			return parent::renderText($row);
+		}
+
+		return number_format((float) $value, $this->decimals, $this->decimalSeparator, '');
 	}
 
 

@@ -174,6 +174,14 @@ $grid->addExportCsv('CSV', 'users.csv', filtered: true, encoding: 'windows-1250'
 $grid->addExport('XLSX', fn(Selection $selection, Datagrid $grid) => $this->sendXlsx($selection), filtered: true);
 ```
 
+Every export is a button above the table. `filtered: true` exports the rows of the active filter, `false` (default) all rows
+of the source - both in the active sorting and without pagination.
+
+- `addExportCsv($caption, $fileName, $filtered, $encoding = 'UTF-8', $delimiter = ';', $bom = true)` - columns of the grid
+  (`->setColumns([...keys])` for own columns or order), cells as their text without HTML, numbers without the thousands separator
+- `addExport($caption, $callback, $filtered)` - own export, the callback gets the rows (`Selection` of `ActiveRow`, iterable)
+  and the grid, and sends a response (`$grid->getPresenter()->sendResponse(...)`) or terminates the presenter
+
 ### Detail of a row
 
 ```php

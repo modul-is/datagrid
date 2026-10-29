@@ -134,6 +134,25 @@ test('columns render values', function(): void
 });
 
 
+test('text of the cells for the CSV export', function(): void
+{
+	$explorer = createExplorer();
+	$grid = new Datagrid($explorer->table('person'));
+	$person = $explorer->table('person')->get(5);
+
+	// number without the thousands separator, decimals by the format
+	Assert::same('61000', $grid->addNumber('salary', 'Plat')->renderText($person));
+	Assert::same('61000,00', $grid->addNumber('salary2', 'Plat', 'salary')->setFormat(2)->renderText($person));
+
+	// blocks of HTML separated by a space, entities decoded
+	Assert::same('Černý Novák & syn', $grid->addText('name', 'Jméno')
+		->setRenderer(fn($row) => Nette\Utils\Html::el()
+			->addHtml(Nette\Utils\Html::el('div')->setText($row->lastname))
+			->addHtml(Nette\Utils\Html::el('div')->setText($row->firstname . ' & syn')))
+		->renderText($person));
+});
+
+
 test('align - center by default, own align of the grid and of the column', function(): void
 {
 	$grid = new Datagrid(createExplorer()->table('person'));
